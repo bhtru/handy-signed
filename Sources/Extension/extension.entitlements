@@ -3,11 +3,20 @@
 <plist version="1.0">
 <dict>
     <!--
-      Non-sandboxed FinderSync extension (Developer ID distribution, not App
-      Store). Because it is not sandboxed, it can run helper processes (ditto,
-      open) and read/write the files the user acts on without the old
-      "temporary-exception" file-access hack, which App Store review forbids
-      and which was only ever needed to escape the sandbox.
+      App extensions MUST be sandboxed — pkd (the extension host) refuses to
+      launch an unsandboxed .appex, no matter how the app is distributed.
+      Removing app-sandbox silently kills every right-click menu item.
+
+      The temporary-exception below grants filesystem access from inside the
+      sandbox (extract zips, create files, run /usr/bin/open). It would be
+      rejected by App Store review, but this app ships via Developer ID where
+      it is allowed — do not "clean it up".
     -->
+    <key>com.apple.security.app-sandbox</key>
+    <true/>
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    <key>com.apple.security.temporary-exception.files.absolute-path.read-write</key>
+    <string>/</string>
 </dict>
 </plist>
