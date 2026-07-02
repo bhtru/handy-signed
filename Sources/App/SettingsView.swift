@@ -67,7 +67,7 @@ struct GeneralTab: View {
                         } else {
                             Image(systemName: "exclamationmark.triangle.fill").foregroundColor(.orange)
                             Text("Not granted").foregroundColor(.orange).font(.callout)
-                            Button("Open Settings") { requestAccess() }
+                            Button("Grant Access") { requestAccess() }
                                 .buttonStyle(.bordered).controlSize(.small)
                             Button("Check Again") { accessOK = AXIsProcessTrusted() }
                                 .buttonStyle(.bordered).controlSize(.small)
@@ -76,9 +76,9 @@ struct GeneralTab: View {
                 }
                 if !accessOK {
                     HintText("""
-                        1. Click "Open Settings" — this also registers the current Handy build with macOS.
-                        2. Find Handy in the Accessibility list and toggle it on.
-                        3. Already in the list but still "Not granted"? Click the − button to remove it, then click "Open Settings" again.
+                        1. Click "Grant Access" — Handy clears any stale permission entry automatically.
+                        2. Toggle Handy ON in the Accessibility list that opens.
+                        That's it — no need to remove and re-add anything, even after an update.
                         """)
                 }
             } header: { SectionHeader("Permissions") }
@@ -115,18 +115,33 @@ struct GeneralTab: View {
     }
 
     private func requestAccess() {
-        // AXIsProcessTrustedWithOptions(prompt:true) registers THIS binary's code
-        // signature with macOS. Without this call, manually toggling in System
-        // Settings can link the permission to a stale binary hash from a prior build.
-        _ = AXIsProcessTrustedWithOptions(
-            [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-        )
-        // Also navigate directly to the Accessibility pane
-        for raw in [
-            "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
-            "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension",
-        ] {
-            if let url = URL(string: raw), NSWorkspace.shared.open(url) { return }
+        DispatchQueue.global(qos: .userInitiated).async {
+            // Builds without a stable signing identity get a new signature
+            // every compile, so the old TCC grant goes stale: System Settings
+            // shows Handy enabled but AXIsProcessTrusted() returns false.
+            // Reset our own entries (harmless when none exist) so the toggle
+            // the user flips next is recorded against THIS binary. With a
+            // Developer ID signature the entries never go stale and the reset
+            // is simply a no-op re-prompt.
+            for service in ["Accessibility", "AppleEvents"] {
+                let t = Process()
+                t.executableURL = URL(fileURLWithPath: "/usr/bin/tccutil")
+                t.arguments = ["reset", service, "com.lonfeng.handy"]
+                t.standardOutput = Pipe(); t.standardError = Pipe()
+                try? t.run(); t.waitUntilExit()
+            }
+            DispatchQueue.main.async {
+                // Registers the current binary's signature and shows the prompt
+                _ = AXIsProcessTrustedWithOptions(
+                    [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+                )
+                for raw in [
+                    "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
+                    "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension",
+                ] {
+                    if let url = URL(string: raw), NSWorkspace.shared.open(url) { return }
+                }
+            }
         }
     }
 
