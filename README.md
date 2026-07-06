@@ -70,10 +70,36 @@ CI runs `bash build.sh --check` (steps 1–3 only) on every push and pull reques
 By default builds are **ad-hoc signed** — fine for local use, but macOS ties permissions to the code signature, so every rebuild invalidates previous permission grants. For distributable builds, sign with a Developer ID:
 
 ```sh
-SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)" bash build.sh
+SIGNING_IDENTITY="3E901352041D52C4625F6D37ADEEAD3A6AD00CBA" bash build.sh
 ```
 
 This enables the Hardened Runtime and secure timestamps, making the build notarizable, and permissions then persist across updates.
+
+### Notarized DMGs
+
+Public releases should be Developer ID signed and notarized. On this Mac, the Tsuga Digital Inc. Developer ID Application certificate is already installed:
+
+```text
+Developer ID Application: Tsuga Digital Inc. (UJ82R55UPL)
+SHA-1: 3E901352041D52C4625F6D37ADEEAD3A6AD00CBA
+```
+
+Create the local `notarytool` keychain profile once:
+
+```sh
+scripts/setup-apple-signing.sh
+```
+
+Then build a notarized DMG:
+
+```sh
+SIGNING_IDENTITY="3E901352041D52C4625F6D37ADEEAD3A6AD00CBA" \
+NOTARY_PROFILE=handy-notary-tsuga \
+NOTARIZE=1 \
+bash build.sh
+```
+
+`build.sh` then signs `Handy.app`, packages `Handy.dmg`, signs the DMG, submits it to Apple notarization, staples the ticket, and verifies the stapled DMG with Gatekeeper. You can also skip the stored profile and provide `APPLE_ID`, `APPLE_TEAM_ID`, and `APPLE_APP_SPECIFIC_PASSWORD` in the environment.
 
 ## Releasing
 
@@ -84,11 +110,31 @@ echo "1.1.0" > VERSION
 # 2. Commit everything (release.sh refuses to run with uncommitted changes)
 git add -A && git commit -m "Release 1.1.0"
 
-# 3. Build, sign the update, generate the appcast, publish to GitHub Releases
-SIGNING_IDENTITY="Developer ID Application: …" bash release.sh
+# 3. Build, notarize, sign the update, generate the appcast, publish to GitHub Releases
+SIGNING_IDENTITY="3E901352041D52C4625F6D37ADEEAD3A6AD00CBA" \
+NOTARY_PROFILE=handy-notary-tsuga \
+NOTARIZE=1 \
+bash release.sh
 ```
 
 `release.sh` signs the DMG with the Sparkle EdDSA key (stored in the releaser's Keychain — generated once with `vendor/Sparkle/bin/generate_keys`), regenerates `appcast.xml`, and creates the GitHub release. Existing installs pick the update up automatically.
+
+Each release uploads both `Handy-$VERSION.dmg` for Sparkle and `Handy.dmg` for a stable website download URL:
+
+```text
+https://github.com/IsaacYeung/Handy/releases/latest/download/Handy.dmg
+```
+
+## Website
+
+The static marketing site lives in `site/` and is configured for Vercel from the repository root:
+
+```sh
+npm run dev     # local preview at http://localhost:4173
+npm run build   # writes the Vercel output to dist/
+```
+
+Vercel uses `vercel.json`, runs `npm run build`, and serves `dist/`.
 
 ## Project layout
 

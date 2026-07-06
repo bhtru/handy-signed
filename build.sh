@@ -44,17 +44,63 @@ fi
 #   SIGNING_IDENTITY="Developer ID Application: …" bash build.sh
 # (or export it in your shell). Nothing else in this script needs to change.
 SIGNING_IDENTITY="${SIGNING_IDENTITY:--}"
+NOTARIZE="${NOTARIZE:-0}"
+NOTARY_PROFILE="${NOTARY_PROFILE:-}"
+OPEN_DMG="${OPEN_DMG:-1}"
 
 if [ "$SIGNING_IDENTITY" = "-" ]; then
-    RELEASE_FLAGS=""                                # ad-hoc: local dev only
+    CODESIGN_FLAGS=(--force --sign "$SIGNING_IDENTITY")
     SIGN_MODE="ad-hoc (local testing)"
 else
     # Hardened Runtime + secure timestamp are required for notarization.
-    RELEASE_FLAGS="--options runtime --timestamp"
+    CODESIGN_FLAGS=(--force --options runtime --timestamp --sign "$SIGNING_IDENTITY")
     SIGN_MODE="$SIGNING_IDENTITY"
 fi
 
 echo "Building $APP_NAME  [sign: $SIGN_MODE]..."
+
+is_truthy() {
+    case "${1:-}" in
+        1|true|TRUE|yes|YES|y|Y) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+notary_credentials() {
+    if [ -n "$NOTARY_PROFILE" ]; then
+        NOTARY_ARGS=(--keychain-profile "$NOTARY_PROFILE")
+        return
+    fi
+
+    if [ -z "${APPLE_ID:-}" ] || [ -z "${APPLE_TEAM_ID:-}" ] || [ -z "${APPLE_APP_SPECIFIC_PASSWORD:-}" ]; then
+        echo "ERROR: NOTARIZE=1 requires either NOTARY_PROFILE or APPLE_ID, APPLE_TEAM_ID, and APPLE_APP_SPECIFIC_PASSWORD."
+        echo "Example profile setup:"
+        echo "  xcrun notarytool store-credentials handy-notary --apple-id you@example.com --team-id TEAMID --password app-specific-password"
+        echo "  NOTARY_PROFILE=handy-notary SIGNING_IDENTITY=\"Developer ID Application: ...\" NOTARIZE=1 bash build.sh"
+        exit 1
+    fi
+
+    NOTARY_ARGS=(--apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD")
+}
+
+notarize_dmg() {
+    if ! is_truthy "$NOTARIZE"; then
+        return
+    fi
+
+    if [ "$SIGNING_IDENTITY" = "-" ]; then
+        echo "ERROR: NOTARIZE=1 cannot be used with ad-hoc signing. Set SIGNING_IDENTITY to a Developer ID Application certificate."
+        exit 1
+    fi
+
+    notary_credentials
+
+    echo "Notarizing $DMG_NAME..."
+    xcrun notarytool submit "$DMG_NAME" "${NOTARY_ARGS[@]}" --wait
+    xcrun stapler staple "$DMG_NAME"
+    xcrun stapler validate "$DMG_NAME"
+    spctl -a -t open --context context:primary-signature -v "$DMG_NAME"
+}
 
 # ── Phase 1: Type-check (fast; catches compile errors before touching the bundle)
 echo "Type-checking..."
@@ -166,13 +212,13 @@ for nested in \
     "$SPARKLE_FW/Versions/B/XPCServices/Installer.xpc" \
     "$SPARKLE_FW/Versions/B/Autoupdate" \
     "$SPARKLE_FW/Versions/B/Updater.app"; do
-    [ -e "$nested" ] && codesign --force $RELEASE_FLAGS --sign "$SIGNING_IDENTITY" "$nested"
+    [ -e "$nested" ] && codesign "${CODESIGN_FLAGS[@]}" "$nested"
 done
-codesign --force $RELEASE_FLAGS --sign "$SIGNING_IDENTITY" "$SPARKLE_FW"
-codesign --force $RELEASE_FLAGS --sign "$SIGNING_IDENTITY" \
+codesign "${CODESIGN_FLAGS[@]}" "$SPARKLE_FW"
+codesign "${CODESIGN_FLAGS[@]}" \
     --entitlements "Sources/Extension/extension.entitlements" \
     "$PLUGINSDIR/$APPEX_BUNDLE"
-codesign --force $RELEASE_FLAGS --sign "$SIGNING_IDENTITY" \
+codesign "${CODESIGN_FLAGS[@]}" \
     --entitlements "Sources/App/app.entitlements" \
     "$APP_BUNDLE"
 xattr -cr "$APP_BUNDLE"
@@ -203,6 +249,9 @@ codesign -v "$PLUGINSDIR/$APPEX_BUNDLE" 2>/dev/null \
 codesign -v "$APP_BUNDLE" 2>/dev/null \
     && echo "  ✓  App signature valid" \
     || { echo "  ✗  App signature invalid"; FAIL=1; }
+codesign --verify --strict --deep "$APP_BUNDLE" 2>/dev/null \
+    && echo "  ✓  Deep strict signature verification passed" \
+    || { echo "  ✗  Deep strict signature verification failed"; FAIL=1; }
 if [ "$FAIL" -ne 0 ]; then echo "Bundle verification failed. Aborting."; exit 1; fi
 
 # ── Package DMG ───────────────────────────────────────────────────────────────
@@ -256,6 +305,16 @@ hdiutil convert "$TMP_DMG" \
 
 rm -rf "$TMP_DIR" "$TMP_DMG"
 
+if [ "$SIGNING_IDENTITY" != "-" ]; then
+    echo "Signing installer disk image..."
+    codesign "${CODESIGN_FLAGS[@]}" "$DMG_NAME"
+    codesign --verify "$DMG_NAME"
+fi
+
+notarize_dmg
+
 echo ""
-echo "Done! Opening installer..."
-open "$DMG_NAME"
+echo "Done! Built $APP_BUNDLE and $DMG_NAME."
+if is_truthy "$OPEN_DMG"; then
+    open "$DMG_NAME"
+fi

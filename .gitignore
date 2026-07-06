@@ -7,6 +7,7 @@
 *.icns
 *.iconset/
 /build/
+/dist/
 
 # Signing material — MUST never be committed to a public repo
 *.p12
