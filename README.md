@@ -127,14 +127,26 @@ https://github.com/IsaacYeung/Handy/releases/latest/download/Handy.dmg
 
 ## Website
 
-The static marketing site lives in `site/` and is configured for Vercel from the repository root:
+The marketing site is an Astro static site with MDX support for the blog:
 
-```sh
-npm run dev     # local preview at http://localhost:4173
-npm run build   # writes the Vercel output to dist/
+```text
+src/pages/index.astro             Landing page
+src/pages/blog/index.astro        Blog index
+src/pages/blog/[slug].astro       Generated blog post pages
+src/content/blog/*.mdx            Blog posts
+src/content.config.ts             Blog collection schema
+public/assets/handy-mark.svg      Shared H brand mark and site icon
 ```
 
-Vercel uses `vercel.json`, runs `npm run build`, and serves `dist/`.
+Run it from the repository root:
+
+```sh
+npm run dev     # local Astro dev server
+npm run build   # writes the Vercel output to dist/
+npm run preview # preview the built dist/ output
+```
+
+Vercel uses `vercel.json`, installs with `npm install`, runs `npm run build`, and serves `dist/`. The project is pinned to Node 22.x for parity between local and production builds.
 
 ## Project layout
 

@@ -1,0 +1,37 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+---
+
+<BaseLayout
+  title="Blog"
+  description="Release notes, setup notes, and Finder workflow writing from Handy."
+  currentPath="/blog"
+>
+  <main class="page-shell">
+    <section class="page-hero">
+      <p class="eyebrow">Handy Blog</p>
+      <h1>Release notes, setup notes, and Finder workflow writing.</h1>
+    </section>
+
+    <section class="post-list" aria-label="Blog posts">
+      {posts.map((post) => (
+        <a class="post-card" href={`/blog/${post.id}/`}>
+          <time datetime={post.data.pubDate.toISOString()}>
+            {post.data.pubDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          </time>
+          <h2>{post.data.title}</h2>
+          <p>{post.data.description}</p>
+          {post.data.tags.length > 0 && (
+            <ul class="tag-row" aria-label="Tags">
+              {post.data.tags.map((tag) => <li>{tag}</li>)}
+            </ul>
+          )}
+        </a>
+      ))}
+    </section>
+  </main>
+</BaseLayout>

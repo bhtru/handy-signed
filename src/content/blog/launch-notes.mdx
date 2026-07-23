@@ -1,0 +1,34 @@
+---
+title: "Handy 1.0 release notes"
+description: "The first signed Handy build focuses on Finder muscle memory, right-click utilities, and a clean permission setup."
+pubDate: 2026-07-08
+tags:
+  - Release
+  - Finder
+  - macOS
+---
+
+import Callout from "../../components/Callout.astro";
+
+<Callout tone="release">
+  Handy ships as a menu-bar app with a Finder Sync extension, so keyboard shortcuts and right-click actions can stay separate from the rest of your Mac.
+</Callout>
+
+## What is included
+
+Handy 1.0 is centered on Finder workflows that longtime Windows users often expect by default:
+
+- Cut and paste files with Command-X and Command-V.
+- Open selected files with Return.
+- Copy a file path from the Finder context menu.
+- Open folders in Terminal, preferring iTerm2 when it is installed.
+- Create a new `.txt` file from empty Finder space.
+- Extract ZIP archives without leaving `__MACOSX` folders behind.
+
+## Permission model
+
+The app only asks for permissions tied to the features you enable. Finder Extension powers right-click actions, Accessibility powers keyboard shortcuts, and Finder Automation allows Handy to inspect and move the selected files.
+
+## Distribution
+
+The release pipeline produces a drag-to-Applications DMG, signs the app with Developer ID, and supports Apple notarization when the notary profile is available.

@@ -3,6 +3,66 @@ import SwiftUI
 import ServiceManagement
 import Sparkle
 
+private func makeHandyStatusIcon() -> NSImage {
+    let image = NSImage(size: NSSize(width: 18, height: 18))
+    image.lockFocus()
+
+    let frame = NSBezierPath(
+        roundedRect: NSRect(x: 1.25, y: 1.25, width: 15.5, height: 15.5),
+        xRadius: 3.2,
+        yRadius: 3.2
+    )
+    frame.lineWidth = 1.5
+    NSColor.black.setStroke()
+    frame.stroke()
+
+    // Caslonian's italic capital H, reduced to a crisp single-colour menu-bar mark.
+    if let context = NSGraphicsContext.current?.cgContext {
+        let mark = CGMutablePath()
+        mark.move(to: CGPoint(x: 522, y: 661))
+        mark.addCurve(to: CGPoint(x: 589, y: 586), control1: CGPoint(x: 595, y: 657), control2: CGPoint(x: 611, y: 652))
+        mark.addLine(to: CGPoint(x: 512, y: 350))
+        mark.addLine(to: CGPoint(x: 218, y: 350))
+        mark.addLine(to: CGPoint(x: 294, y: 586))
+        mark.addCurve(to: CGPoint(x: 392, y: 661), control1: CGPoint(x: 314, y: 646), control2: CGPoint(x: 326, y: 657))
+        mark.addLine(to: CGPoint(x: 396, y: 675))
+        mark.addLine(to: CGPoint(x: 130, y: 675))
+        mark.addLine(to: CGPoint(x: 125, y: 661))
+        mark.addCurve(to: CGPoint(x: 192, y: 586), control1: CGPoint(x: 197, y: 657), control2: CGPoint(x: 214, y: 652))
+        mark.addLine(to: CGPoint(x: 30, y: 89))
+        mark.addCurve(to: CGPoint(x: -67, y: 14), control1: CGPoint(x: 11, y: 29), control2: CGPoint(x: -1, y: 18))
+        mark.addLine(to: CGPoint(x: -71, y: 0))
+        mark.addLine(to: CGPoint(x: 195, y: 0))
+        mark.addLine(to: CGPoint(x: 199, y: 14))
+        mark.addCurve(to: CGPoint(x: 133, y: 89), control1: CGPoint(x: 127, y: 18), control2: CGPoint(x: 111, y: 23))
+        mark.addLine(to: CGPoint(x: 213, y: 336))
+        mark.addLine(to: CGPoint(x: 508, y: 336))
+        mark.addLine(to: CGPoint(x: 427, y: 89))
+        mark.addCurve(to: CGPoint(x: 330, y: 14), control1: CGPoint(x: 408, y: 29), control2: CGPoint(x: 396, y: 18))
+        mark.addLine(to: CGPoint(x: 326, y: 0))
+        mark.addLine(to: CGPoint(x: 592, y: 0))
+        mark.addLine(to: CGPoint(x: 596, y: 14))
+        mark.addCurve(to: CGPoint(x: 530, y: 89), control1: CGPoint(x: 524, y: 18), control2: CGPoint(x: 508, y: 23))
+        mark.addLine(to: CGPoint(x: 691, y: 586))
+        mark.addCurve(to: CGPoint(x: 788, y: 661), control1: CGPoint(x: 711, y: 646), control2: CGPoint(x: 722, y: 657))
+        mark.addLine(to: CGPoint(x: 793, y: 675))
+        mark.addLine(to: CGPoint(x: 527, y: 675))
+        mark.closeSubpath()
+
+        context.saveGState()
+        context.translateBy(x: 2.4, y: 3.4)
+        context.scaleBy(x: 0.0165, y: 0.0165)
+        context.addPath(mark)
+        context.setFillColor(NSColor.black.cgColor)
+        context.fillPath()
+        context.restoreGState()
+    }
+
+    image.unlockFocus()
+    image.isTemplate = true
+    return image
+}
+
 // MARK: - Settings window
 
 class SettingsWindowController: NSWindowController, NSWindowDelegate {
@@ -132,9 +192,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupStatusBar() {
         statusBarItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = statusBarItem?.button {
-            let img = NSImage(systemSymbolName: "wand.and.stars", accessibilityDescription: "Handy")
-            img?.isTemplate = true
-            button.image = img
+            button.image = makeHandyStatusIcon()
+            button.image?.accessibilityDescription = "Handy"
         }
 
         let menu = NSMenu()

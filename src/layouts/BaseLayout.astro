@@ -1,0 +1,69 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  currentPath?: string;
+}
+
+const {
+  title = 'Handy - Windows-style Finder tools for macOS',
+  description = 'Handy adds power-user Finder shortcuts and small system utilities to macOS, including cut and paste, Return to open, Copy Path, Open in Terminal, and more.',
+  currentPath = Astro.url.pathname,
+} = Astro.props;
+
+const pageTitle = title === 'Handy'
+  ? 'Handy - Windows-style Finder tools for macOS'
+  : `${title} - Handy`;
+
+const navItems = [
+  { href: '/', label: 'Home' },
+  { href: '/#features', label: 'Features' },
+  { href: '/blog', label: 'Blog' },
+  { href: 'https://github.com/IsaacYeung/Handy/releases/latest', label: 'Releases' },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="preconnect" href="https://use.typekit.net" crossorigin />
+    <link rel="preconnect" href="https://p.typekit.net" crossorigin />
+    <link rel="stylesheet" href="https://use.typekit.net/myr8ieo.css" />
+    <link rel="icon" href="/assets/handy-mark.svg" type="image/svg+xml" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+  </head>
+  <body>
+    <header class="site-header" aria-label="Primary">
+      <a class="brand" href="/">
+        <img src="/assets/handy-mark.svg" alt="" width="34" height="34" />
+        <span>Handy</span>
+      </a>
+      <nav>
+        {navItems.map((item) => (
+          <a
+            href={item.href}
+            aria-current={item.href === currentPath ? 'page' : undefined}
+          >
+            {item.label}
+          </a>
+        ))}
+      </nav>
+    </header>
+
+    <slot />
+
+    <footer>
+      <span>Handy for macOS</span>
+      <a href="https://github.com/IsaacYeung/Handy/blob/main/LICENSE">MIT License</a>
+    </footer>
+  </body>
+</html>

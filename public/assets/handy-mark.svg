@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Handy</title>
+  <desc id="desc">A white italic Caslonian H on a Capri rounded square.</desc>
+  <rect width="256" height="256" rx="52" fill="#00BCF2"/>
+  <path
+    fill="#fff"
+    transform="translate(42 210) scale(.24 -.24)"
+    d="M522 661C595 657 611 652 589 586L512 350H218L294 586C314 646 326 657 392 661L396 675H130L125 661C197 657 214 652 192 586L30 89C11 29-1 18-67 14L-71 0H195L199 14C127 18 111 23 133 89L213 336H508L427 89C408 29 396 18 330 14L326 0H592L596 14C524 18 508 23 530 89L691 586C711 646 722 657 788 661L793 675H527Z"
+  />
+</svg>
