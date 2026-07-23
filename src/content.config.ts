@@ -14,4 +14,13 @@ const blog = defineCollection({
   }),
 });
 
-export const collections = { blog };
+const legal = defineCollection({
+  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/legal' }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    updatedDate: z.coerce.date().optional(),
+  }),
+});
+
+export const collections = { blog, legal };

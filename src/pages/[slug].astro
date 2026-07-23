@@ -1,0 +1,38 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const legalDocs = await getCollection('legal');
+  return legalDocs.map((doc) => ({
+    params: { slug: doc.id },
+    props: { doc },
+  }));
+}
+
+const { doc } = Astro.props;
+const { Content } = await render(doc);
+---
+
+<BaseLayout title={doc.data.title} description={doc.data.description}>
+  <main class="article-shell">
+    <article>
+      <header class="article-header">
+        <a class="text-link" href="/">← Back to Home</a>
+        <p class="eyebrow">Legal</p>
+        <h1>{doc.data.title}</h1>
+        {doc.data.description && <p>{doc.data.description}</p>}
+        {doc.data.updatedDate && (
+          <div class="article-meta">
+            <time datetime={doc.data.updatedDate.toISOString()}>
+              Last updated: {doc.data.updatedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+            </time>
+          </div>
+        )}
+      </header>
+      <div class="article-body">
+        <Content />
+      </div>
+    </article>
+  </main>
+</BaseLayout>

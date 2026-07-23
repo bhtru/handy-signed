@@ -1,0 +1,25 @@
+---
+interface Props {
+  currentPath?: string;
+}
+
+const { currentPath = Astro.url.pathname } = Astro.props;
+---
+
+<footer>
+  <span>Handy for macOS</span>
+  <div class="footer-links">
+    <a href="/terms" aria-current={currentPath === '/terms' ? 'page' : undefined}>Terms of Service</a>
+    <a href="/privacy" aria-current={currentPath === '/privacy' ? 'page' : undefined}>Privacy Policy</a>
+    <a href="https://github.com/IsaacYeung/Handy/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a>
+  </div>
+</footer>
+
+<style>
+  .footer-links {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+</style>
